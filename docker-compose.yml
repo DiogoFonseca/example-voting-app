@@ -8,8 +8,10 @@ services:
     # use python rather than gunicorn for local dev
     command: python app.py
     labels:
-      - "traefik.http.routers.vote.rule=Host(`vote.localhost`)"
-      - "traefik.docker.network=front-tier"
+      - "traefik.http.routers.vote.rule=Host(`vote.localhost`) || PathPrefix(`/vote`)"
+      - "traefik.http.routers.vote.middlewares=vote"
+      - "traefik.http.middlewares.vote.stripprefix.prefixes=/vote"
+      - "traefik.http.middlewares.vote.stripprefix.forceSlash=false"
     depends_on:
       - redis
         # condition: service_healthy
@@ -26,8 +28,10 @@ services:
     # use nodemon rather than node for local dev
     command: nodemon server.js
     labels:
-      - "traefik.http.routers.result.rule=Host(`result.localhost`)"
-      - "traefik.docker.network=front-tier"
+      - "traefik.http.routers.result.rule=Host(`result.localhost`) || PathPrefix(`/result`)"
+      - "traefik.http.routers.result.middlewares=result"
+      - "traefik.http.middlewares.result.stripprefix.prefixes=/result"
+      - "traefik.http.middlewares.result.stripprefix.forceSlash=false"
     depends_on:
       - db
         # condition: service_healthy
@@ -81,11 +85,12 @@ services:
     command: --api.insecure=true --providers.docker
     ports:
       - "80:80"
-      - "9090:8080"
+      - "8080:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - front-tier
+      - back-tier
 
 volumes:
   db-data:

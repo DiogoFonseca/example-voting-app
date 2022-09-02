@@ -26,13 +26,16 @@ services:
         constraints: [node.role == manager]
   vote:
     image: dockersamples/examplevotingapp_vote:before
-    ports:
-      - 5000:80
+    # ports:
+    #   - 5000:80
     networks:
       - frontend
     depends_on:
       - redis
     deploy:
+      labels:
+        - "traefik.http.routers.vote.rule=Host(`vote.localhost`)"
+        - "traefik.http.services.vote.loadbalancer.port=80"
       replicas: 2
       update_config:
         parallelism: 2
@@ -40,13 +43,16 @@ services:
         condition: on-failure
   result:
     image: dockersamples/examplevotingapp_result:before
-    ports:
-      - 5001:80
+    # ports:
+    #   - 5001:80
     networks:
       - backend
     depends_on:
       - db
     deploy:
+      labels:
+        - "traefik.http.routers.result.rule=Host(`result.localhost`)"
+        - "traefik.http.services.result.loadbalancer.port=80"
       replicas: 1
       update_config:
         parallelism: 2
@@ -87,7 +93,7 @@ services:
 
   router:
     image: traefik:v2.8
-    command: --api.insecure=true --providers.docker
+    command: --api.insecure=true --providers.docker --providers.docker.swarmMode=true
     ports:
       - "80:80"
       - "9090:8080"
